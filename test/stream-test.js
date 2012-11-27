@@ -31,7 +31,7 @@ describe('irc stream tests', function() {
       }
     })
   })
-
+/*
   describe('# simple stream test', function(){
     it('should pass pause-unpause stream tests', function(done){
       pauseUnpauseStream(done)
@@ -44,7 +44,7 @@ describe('irc stream tests', function() {
       simplePubsub(done)
     })
   })
-
+*/
 }) 
 
 var pauseUnpauseStream = function (done) {
