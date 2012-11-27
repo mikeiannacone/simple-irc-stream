@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ornl-situ/irc-stream.png?branch=master)](https://travis-ci.org/ornl-situ/irc-stream)
+[![Build Status](https://travis-ci.org/ornl-situ/simple-irc-stream.png?branch=master)](https://travis-ci.org/ornl-situ/simple-irc-stream)
 
 
 # Send or receive strings from an IRC server
