@@ -23,23 +23,24 @@ var Stream = require('stream').Stream
  *
  * Available properties for configuration object: 
  *
- *  opts.channel        //name of the channel
- *  opts.serverAddress  //address of irc server
- *  opts.serverPort     //port of irc server
- *  opts.ircOpts        //special options passed to irc module.  see irc module for documentation
+ *  opts.channel        //name of the channel, with or without leading '#' (defaults to #test)
+ *  opts.nick           //nick to use (defaults to "robot_SOMENUMBER")
+ *  opts.serverAddress  //address of irc server (defaults to localhost)
+ *  opts.serverPort     //port of irc server (defaults to 6667)
+ *  opts.mode           //should be either 'readable' or 'writable' as needed
+ *  opts.ircOpts        //special options passed to irc module.  see irc module documentation at https://node-irc.readthedocs.org/en/latest/API.html#irc.Client (and note that if channels and port fields are specified here, they will instead be overwritten with the values above)
  *
  * @param {Object} opts The regular expression configuration. 
  *
  */
 function SimpleIRCStream(opts) {
+
+  this.verbose = false;
   
   // name of the application, defined in package.json, used for errors
   this._appName = require('./package').name
   this._version = require('./package').version
   this._errorPrefix = this._appName + ': '
-
-  this.writable = true
-  this.readable = true
 
   this._paused = this._ended = this._destroyed = false
 
@@ -49,18 +50,72 @@ function SimpleIRCStream(opts) {
 
   if (!opts)
     opts = {}
+
   if (!opts.serverPort)
     opts.serverPort = 6667
+  this.serverPort = opts.serverPort
+
   if(!opts.serverAddress)
     opts.serverAddress = "localhost"
+  this.serverAddress = opts.serverAddress
+
   if(opts.channel)
     this.channel = opts.channel
   else
-    this.channel = "Default"
-  var ircOpts = {}
-  if(opts.ircOpts) ircOpts = opts.ircOpts
+    this.channel = "test"
+  //prepend with # if needed
+  if(this.channel[0] !== '#')
+    this.channel = '#' + this.channel
 
-  this.ircClient = null//TODO //redis.createClient(opts.serverPort, opts.serverAddress, redisOpts)
+  if(opts.nick)
+    this.nick = opts.nick
+  else{
+    var botNum = Math.floor((Math.random()*10000))
+    this.nick = "robot_" + botNum
+  }
+
+  if(opts.mode && opts.mode.toLowerCase() === 'readable'){
+    this._mode = 'readable'
+    this.writable = false
+    this.readable = true
+  }else if(opts.mode && opts.mode.toLowerCase() === 'writable'){
+    this._mode = 'writable'
+    this.writable = true
+    this.readable = false
+  }else{ //TODO how best to handle?  There's probably a better way.
+    this.writable = false
+    this.readable = false
+    console.log("ERROR: mode must be readable or writable")
+    return null
+  }
+
+  this.ircOpts = {}
+  if(opts.ircOpts)
+    this.ircOpts = opts.ircOpts
+
+  this.ircOpts.channels = [this.channel] //not working for some reason? will join() instead.
+  this.ircOpts.port = this.serverPort
+
+  //actually connect now
+  this.ircClient = new irc.Client(this.serverAddress, this.nick, this.ircOpts);
+
+  var self = this;
+  this.ircClient.addListener('registered', function(){
+    //now that you have your connection, you can do your other needed stuff.
+    self.ircClient.join(self.channel)
+  })
+
+  //set up the listner, will emit events here if desired.
+  if(this._mode === 'readable'){
+    this.ircClient.addListener('message'+this.channel, function (from, message) { //TODO replace with a useful listener
+      console.log(from + ' => ' + this.channel + ': ' + message);
+    })
+  }
+
+  //set up a listener for errors (from the server, etc)
+  this.ircClient.addListener('error', function(message) {
+    console.log('error: ', message);//TODO better handling
+  })
 
   return this
 }
@@ -89,11 +144,11 @@ SimpleIRCStream.prototype.write = function (data) {
   if ( this._paused ) 
     return false
 
-  if(verbose){ 
-    console.log('publish to redis channel: ' + this.channel + ', message: ' + util.inspect(record))
+  if(this.verbose){ 
+    console.log('saying to channel: ' + this.channel + ', message: ' + util.inspect(data))
   }
-  //TODO callback need to do anything?
-  this.redisClient.publish(this.channel, JSON.stringify(record), function (err, res){  })
+
+  this.ircClient.say(this.channel, JSON.stringify(data)); //TODO only stringify when needed.
   
   return true  
 }

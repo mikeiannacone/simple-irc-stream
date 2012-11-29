@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/ornl-situ/simple-irc-stream.png?branch=master)](https://travis-ci.org/ornl-situ/simple-irc-stream)
 
 
-# Send or receive strings from an IRC server
+# Send or receive messages from an IRC server
 
 This module will provide an input/output stream to/from IRC
 
@@ -14,6 +14,14 @@ npm install simple-irc-stream
 
 ## Configuration
 
+constructor takes an opts object with the following fields:
+
+    opts.channel        //name of the channel, with or without leading '#' (defaults to #test)
+    opts.nick           //nick to use (defaults to "robot_SOMENUMBER")
+    opts.serverAddress  //address of irc server (defaults to localhost)
+    opts.serverPort     //port of irc server (defaults to 6667)
+    opts.mode           //should be either 'readable' or 'writable' as needed
+    opts.ircOpts        //special options passed to irc module.  see irc module documentation at https://node-irc.readthedocs.org/en/latest/API.html#irc.Client (and note that if channels and port fields are specified here, they will instead be overwritten with the values above)
 
 ## Usage
 

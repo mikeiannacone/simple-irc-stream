@@ -1,4 +1,4 @@
-var IRCStream = require('../irc-stream.js')
+var SimpleIRCStream = require('../irc-stream.js')
   , fs = require('fs')
   , path = require('path')
   , util = require('util')
@@ -38,13 +38,13 @@ describe('irc stream tests', function() {
     })
   })
 
-
+*/
   describe('# simple data pipe test', function(){
-    it('should pass simple objects to pubsub channel', function(done){
-      simplePubsub(done)
+    it('should pass simple messages to irc channel', function(done){
+      sendSomeText(done)
     })
   })
-*/
+
 }) 
 
 var pauseUnpauseStream = function (done) {
@@ -61,34 +61,42 @@ var pauseUnpauseStream = function (done) {
   }, 1500) //need some time here so that pipelines can empty and whatnot before moving on to other tests
 }
 
-var simplePubsub = function (done) {
+var sendSomeText = function (done) {
   // define the test data and output file
   var inFile = path.join('test', 'input', 'simpleText')
     , opts = { channel:"test"      //name of the channel to publish messages
+      //, nick:"robot_for_sendSomeText"
       , serverAddress: "localhost"  //address of irc server
       , serverPort:6667     //port of irc server
+      , mode:'writable'
       , ircOpts: {} }
     , result = []
 
+/*
   var rc = irc.createClient(opts.serverPort, opts.serverAddress, opts.ircOpts)
   rc.subscribe(opts.channel)
   rc.on('message', function(channel, message){
     //console.log('message!')
     result.push(JSON.parse(message))
   })
+*/
+  var testClient = new SimpleIRCStream(opts)
 
-  var pubsub = new IRCStream(opts)
-
-  fs.readFile(inFile, function (err, data) {
-    if (err) throw err
-    data = JSON.parse(data)
-    for(var i=0; i<data.length; i++){
-      pubsub.write(data[i]);
-    }
-    setTimeout(function(){
-      result.should.eql(data)
-      done()
-    }, 1500) //just need some time to receive and handle the messages returning to rc obj above.
-  })
+  setTimeout(function(){
+    fs.readFile(inFile, function (err, data) {
+      if (err) throw err
+      data = ''+data //force to string
+      data = data.split('\n')
+      if(data[data.length-1] === "")
+        data.pop(data.length-1) //remove last item if blank.
+      for(var i=0; i<(data.length); i++){
+        testClient.write(data[i]);
+      }
+      setTimeout(function(){
+        result.should.eql(data)
+        done()
+      }, 1500) //just need some time to receive and handle the messages returning to rc obj above.
+    })
+  }, 100) //allow time to make connection //TODO should really handle that internally, with a buffer, yeah?
  
 }
