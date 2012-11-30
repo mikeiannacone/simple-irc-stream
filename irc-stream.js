@@ -109,6 +109,7 @@ function SimpleIRCStream(opts) {
   if(this._mode === 'readable'){
     this.ircClient.addListener('message'+this.channel, function (from, message) { //TODO replace with a useful listener
       console.log(from + ' => ' + this.channel + ': ' + message);
+      this.emit('message', message)
     })
   }
 

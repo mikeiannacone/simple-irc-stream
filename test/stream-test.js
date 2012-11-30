@@ -64,23 +64,28 @@ var pauseUnpauseStream = function (done) {
 var sendSomeText = function (done) {
   // define the test data and output file
   var inFile = path.join('test', 'input', 'simpleText')
-    , opts = { channel:"test"      //name of the channel to publish messages
-      //, nick:"robot_for_sendSomeText"
+    , readOpts = { channel:"test"      //name of the channel to publish messages
       , serverAddress: "localhost"  //address of irc server
       , serverPort:6667     //port of irc server
-      , mode:'writable'
+      , mode: 'readable'
+      , nick: 'read_test_bot'
+      , ircOpts: {} }
+    , writeOpts = { channel:"test"      //name of the channel to publish messages
+      , serverAddress: "localhost"  //address of irc server
+      , serverPort:6667     //port of irc server
+      , mode: 'writable'
+      , nick: 'write_test_bot'
       , ircOpts: {} }
     , result = []
 
-/*
-  var rc = irc.createClient(opts.serverPort, opts.serverAddress, opts.ircOpts)
-  rc.subscribe(opts.channel)
-  rc.on('message', function(channel, message){
-    //console.log('message!')
+  var testClientListen = new SimpleIRCStream(readOpts)
+
+  testClientListen.on('message', function(message){
+    console.log('message! ' + message)
     result.push(JSON.parse(message))
   })
-*/
-  var testClient = new SimpleIRCStream(opts)
+
+  var testClient = new SimpleIRCStream(writeOpts)
 
   setTimeout(function(){
     fs.readFile(inFile, function (err, data) {
